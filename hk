@@ -1,1 +1,153 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
+local player = Players.LocalPlayer
+
+-- SETTINGS
+local distance = 15
+local STEP = 5
+local MIN_DISTANCE = 5
+local MAX_DISTANCE = 200
+local TP_INTERVAL = 0.08
+
+-- ===== GUI =====
+local gui = Instance.new("ScreenGui")
+gui.Name = "FlazedNanoTP3"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Parent = gui
+frame.Size = UDim2.fromScale(0.07, 0.045) -- VERY SMALL
+frame.Position = UDim2.fromScale(0.465, 0.48)
+frame.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
+frame.BorderSizePixel = 0
+frame.Active = true
+
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 18)
+
+local stroke = Instance.new("UIStroke", frame)
+stroke.Color = Color3.fromRGB(120, 150, 255)
+stroke.Thickness = 1
+
+-- Main Button
+local button = Instance.new("TextButton")
+button.Parent = frame
+button.Size = UDim2.fromScale(0.5, 0.8)
+button.Position = UDim2.fromScale(0.03, 0.1)
+button.Text = "By Flazed"
+button.Font = Enum.Font.GothamBold
+button.TextSize = 12
+button.TextColor3 = Color3.fromRGB(240, 240, 255)
+button.BackgroundColor3 = Color3.fromRGB(70, 105, 255)
+button.BorderSizePixel = 0
+Instance.new("UICorner", button).CornerRadius = UDim.new(0, 16)
+
+-- Distance Label
+local distLabel = Instance.new("TextLabel")
+distLabel.Parent = frame
+distLabel.Size = UDim2.fromScale(0.16, 0.6)
+distLabel.Position = UDim2.fromScale(0.55, 0.2)
+distLabel.BackgroundTransparency = 1
+distLabel.Text = tostring(distance)
+distLabel.Font = Enum.Font.GothamBold
+distLabel.TextSize = 11
+distLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+
+-- Minus Button
+local minus = Instance.new("TextButton")
+minus.Parent = frame
+minus.Size = UDim2.fromScale(0.12, 0.55)
+minus.Position = UDim2.fromScale(0.72, 0.22)
+minus.Text = "-"
+minus.Font = Enum.Font.GothamBold
+minus.TextSize = 14
+minus.TextColor3 = Color3.fromRGB(200, 200, 200)
+minus.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+minus.BorderSizePixel = 0
+Instance.new("UICorner", minus).CornerRadius = UDim.new(0, 12)
+
+-- Plus Button
+local plus = Instance.new("TextButton")
+plus.Parent = frame
+plus.Size = UDim2.fromScale(0.12, 0.55)
+plus.Position = UDim2.fromScale(0.86, 0.22)
+plus.Text = "+"
+plus.Font = Enum.Font.GothamBold
+plus.TextSize = 14
+plus.TextColor3 = Color3.fromRGB(200, 200, 200)
+plus.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+plus.BorderSizePixel = 0
+Instance.new("UICorner", plus).CornerRadius = UDim.new(0, 12)
+
+-- ===== DRAG =====
+local dragging, dragStart, startPos
+
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+-- ===== DISTANCE CONTROL =====
+local function update()
+	distLabel.Text = tostring(distance)
+end
+
+plus.MouseButton1Click:Connect(function()
+	distance = math.clamp(distance + STEP, MIN_DISTANCE, MAX_DISTANCE)
+	update()
+end)
+
+minus.MouseButton1Click:Connect(function()
+	distance = math.clamp(distance - STEP, MIN_DISTANCE, MAX_DISTANCE)
+	update()
+end)
+
+-- ===== HOLD TELEPORT =====
+local holding = false
+local lastTP = 0
+
+button.MouseButton1Down:Connect(function()
+	holding = true
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		holding = false
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if not holding then return end
+	if tick() - lastTP < TP_INTERVAL then return end
+	lastTP = tick()
+
+	local char = player.Character
+	if not char then return end
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
+
+	hrp.CFrame = hrp.CFrame + (hrp.CFrame.LookVector * distance)
+end)
