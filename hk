@@ -1,6 +1,8 @@
+-- By Flazed | Nano TP (Click Once)
+-- LocalScript
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
@@ -9,11 +11,10 @@ local distance = 15
 local STEP = 5
 local MIN_DISTANCE = 5
 local MAX_DISTANCE = 200
-local TP_INTERVAL = 0.08
 
 -- ===== GUI =====
 local gui = Instance.new("ScreenGui")
-gui.Name = "FlazedNanoTP3"
+gui.Name = "FlazedNanoTP_Final"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
@@ -125,27 +126,9 @@ minus.MouseButton1Click:Connect(function()
 	update()
 end)
 
--- ===== HOLD TELEPORT =====
-local holding = false
-local lastTP = 0
-
-button.MouseButton1Down:Connect(function()
-	holding = true
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		holding = false
-	end
-end)
-
-RunService.RenderStepped:Connect(function()
-	if not holding then return end
-	if tick() - lastTP < TP_INTERVAL then return end
-	lastTP = tick()
-
-	local char = player.Character
-	if not char then return end
+-- ===== TELEPORT (CLICK ONCE) =====
+button.MouseButton1Click:Connect(function()
+	local char = player.Character or player.CharacterAdded:Wait()
 	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 
